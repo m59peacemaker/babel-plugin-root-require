@@ -99,7 +99,7 @@ test('transforms prefix with absolute filename set', t => {
   })
   t.equal(result.code, 'require("./foo");')
 })
-/*
+
 test('transforms prefix for expression starting with prefix', t => {
   t.plan(1)
   const result = transform('require("~/" + "/foo");', {
@@ -124,14 +124,54 @@ test('transforms prefix when require path is in the same tree as source filename
     filename: 'foo/bar/file.js',
     plugins
   })
-  t.equal(result.code, 'require("../x");')
+  t.equal(result.code, 'require("../../foo/x");')
 })
 
-test('', t => {
+test('transforms prefix when followed by a string not ending in a slash, followed by stuff', t => {
   t.plan(1)
   const result = transform('require("~/foo" + myVar + "/test");', {
     filename: 'foo/bar/file.js',
     plugins
   })
-  t.equal(result.code, 'require("./../foo" + myVar + "/test");')
-})*/
+  t.equal(result.code, 'require("../../foo" + myVar + "/test");')
+})
+
+test('transforms prefix with template string interpolation', t => {
+  t.plan(1)
+  const result = transform('require(`~/${ myVar }`);', {
+    filename: 'a/file.js',
+    plugins
+  })
+  t.equal(result.code, 'require(`../${ myVar }`);')
+})
+
+test('uses `prefix` option', t => {
+  t.plan(1)
+  const result = transform('require("^/foo");', {
+    filename: 'file.js',
+    plugins: [[plugin, {prefix: '^'}]]
+  })
+  t.equal(result.code, 'require("./foo");')
+})
+
+test('`prefix` option can be several character long', t => {
+  t.plan(1)
+  const result = transform('require("hey-o/foo");', {
+    filename: 'file.js',
+    plugins: [[plugin, {prefix: 'hey-o'}]]
+  })
+  t.equal(result.code, 'require("./foo");')
+})
+
+test('throws error when `prefix` option is an object', t => {
+  t.plan(1)
+  try {
+    const result = transform('require(`~/${ myVar }`);', {
+      filename: 'a/file.js',
+      plugins: [[plugin, {prefix: {}}]]
+    })
+    t.fail('did not throw')
+  } catch (err) {
+    t.pass(err)
+  }
+})
