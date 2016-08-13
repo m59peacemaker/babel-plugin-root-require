@@ -175,3 +175,12 @@ test('throws error when `prefix` option is an object', t => {
     t.pass(err)
   }
 })
+
+test('very nested', t => {
+  t.plan(1)
+  const result = transform('require("~/q/w/e/r/t/y");', {
+    filename: 'a/b/c/d/e/file.js',
+    plugins
+  })
+  t.equal(result.code, 'require("../../../../../q/w/e/r/t/y");')
+})

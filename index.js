@@ -24,9 +24,7 @@ const traverseForFirstPartOfRequirePath = (t, node) => {
   return null // there isn't a string or template string here
 }
 
-const hasPrefix = (prefix, path) => {
-  return path.slice(0, prefix.length) === prefix
-}
+const hasPrefix = (prefix, path) => path.slice(0, prefix.length) === prefix
 
 const getProjectRoot = (sourceRoot = '') => resolvePath(process.cwd(), sourceRoot)
 
@@ -37,10 +35,7 @@ const getAbsoluteSourceDirname = (sourcePath, projectRoot) => {
 
 const getRelativePathToProjectRoot = (absoluteSourcePath, projectRoot) => {
   const relativePath = getRelativePath(absoluteSourcePath, projectRoot)
-  if (relativePath.substr(-1) === '.') {
-    return relativePath + '/'
-  }
-  return relativePath
+  return relativePath + (relativePath.substr(-1) === '.' ? '/' : '')
 }
 
 const getNewValue = (sourceRoot, sourcePath, importPath, pathFromRoot) => {
@@ -49,7 +44,7 @@ const getNewValue = (sourceRoot, sourcePath, importPath, pathFromRoot) => {
   const relativePathToProjectRoot = getRelativePathToProjectRoot(absoluteSourcePath, projectRoot)
   if (relativePathToProjectRoot.length) {
     return joinPath(relativePathToProjectRoot, pathFromRoot)
-  } else {
+  } else { // source file is in project root
     return './' + pathFromRoot
   }
 }
