@@ -60,35 +60,23 @@ test('transforms prefix from file in root directory', t => {
   t.equal(result.code, 'require("./foo");')
 })
 
-test('transforms prefix when file is nested 1 level', t => {
+test('transforms prefix nested', t => {
   t.plan(1)
-  const code = 'require("~/foo");'
-  const result = transform(code, {
-    filename: 'a/file.js',
+  const result = transform('require("~/app/utils/get-things");', {
+    filename: 'app/views/the-light.js',
     plugins
   })
-  t.equal(result.code, 'require("../foo");')
+  t.equal(result.code, 'require("../../app/utils/get-things");')
 })
 
-test('transforms prefix when file is nested 2 levels', t => {
+test('transforms prefix nested with sourceRoot', t => {
   t.plan(1)
-  const code = 'require("~/foo");'
-  const result = transform(code, {
-    filename: 'a/b/file.js',
+  const result = transform('require("~/app/utils/get-things");', {
+    sourceRoot: 'src',
+    filename: 'app/views/the-light.js',
     plugins
   })
-  t.equal(result.code, 'require("../../foo");')
-})
-
-test('transforms prefix with relative source root', t => {
-  t.plan(1)
-  const code = 'require("~/foo");'
-  const result = transform(code, {
-    sourceRoot: 'a',
-    filename: 'file.js',
-    plugins
-  })
-  t.equal(result.code, 'require("./foo");')
+  t.equal(result.code, 'require("../../app/utils/get-things");')
 })
 
 test('transforms prefix with absolute source root', t => {
@@ -111,7 +99,7 @@ test('transforms prefix with absolute filename set', t => {
   })
   t.equal(result.code, 'require("./foo");')
 })
-
+/*
 test('transforms prefix for expression starting with prefix', t => {
   t.plan(1)
   const result = transform('require("~/" + "/foo");', {
@@ -146,4 +134,4 @@ test('', t => {
     plugins
   })
   t.equal(result.code, 'require("./../foo" + myVar + "/test");')
-})
+})*/

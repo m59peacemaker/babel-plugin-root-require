@@ -1,4 +1,10 @@
-const path = require('path')
+const {
+  join: joinPath,
+  relative: getRelativePath,
+  resolve: resolvePath,
+  dirname: getDirname,
+  isAbsolute: isAbsolutePath
+} = require('path')
 
 const traverseForFirstPartOfRequirePath = (t, arg) => {
   if (t.isStringLiteral(arg)) {
@@ -22,25 +28,38 @@ const hasPrefix = path => {
   return path.slice(0, 2) === prefix
 }
 
-const getProjectRoot = sourceRoot => path.resolve(process.cwd(), sourceRoot)
+const getProjectRoot = (sourceRoot = '') => resolvePath(process.cwd(), sourceRoot)
 
 const getAbsoluteSourceDirname = (sourcePath, projectRoot) => {
-  const sourceDirname = path.dirname(sourcePath)
-  return path.isAbsolute(sourcePath) ? sourceDirname : path.join(projectRoot, sourceDirname)
+  const sourceDirname = getDirname(sourcePath)
+  return isAbsolutePath(sourcePath) ? sourceDirname : joinPath(projectRoot, sourceDirname)
 }
 
 const getRelativeImportPath = (sourceRoot = './', sourcePath, importPath) => {
   const importPathWithoutPrefix = importPath.slice(1)
   const projectRoot = getProjectRoot(sourceRoot)
-  const absoluteImportPath = path.join(projectRoot, importPathWithoutPrefix)
+  const absoluteImportPath = joinPath(projectRoot, importPathWithoutPrefix)
   const absoluteSourceDirname = getAbsoluteSourceDirname(sourcePath, projectRoot)
-  const relativePath = path.relative(absoluteSourceDirname, absoluteImportPath)
+  const relativePath = getRelativePath(absoluteSourceDirname, absoluteImportPath)
   console.log(absoluteImportPath, absoluteSourceDirname, relativePath)
-  const firstChar = relativePath.slice(0, 1)
-  if (firstChar !== '.') {
-    return './' + relativePath
-  }
+  //const firstChar = relativePath.slice(0, 1)
+  //if (firstChar !== '.') {
+  //  return './' + relativePath
+  //}
   return relativePath
+}
+
+const getNewPrefix = (absoluteSourcePath, projectRoot) => {
+  return relativePathToProjectRoot.length ? relativePathToProjectRoot : './'
+}
+
+const getNewValue = (relativePathToProjectRoot, importPath) => {
+  const withoutPrefix = importPath.slice(2)
+  if (relativePathToProjectRoot.length) {
+    return joinPath(relativePathToProjectRoot, withoutPrefix)
+  } else {
+    return './' + withoutPrefix
+  }
 }
 
 const plugin = ({types: t}) => {
@@ -61,8 +80,13 @@ const plugin = ({types: t}) => {
         const importPath = firstArg.value.raw || firstArg.value
         if (!hasPrefix(importPath)) { return }
 
-        let newValue = getRelativeImportPath(state.file.opts.sourceRoot, sourcePath, importPath)
-        newValue += importPath === prefix ? '/' : ''
+        const sourceRoot = state.file.opts.sourceRoot
+        const projectRoot = getProjectRoot(sourceRoot)
+        const absoluteSourcePath = getAbsoluteSourceDirname(sourcePath, projectRoot)
+        const relativePathToProjectRoot = getRelativePath(absoluteSourcePath, projectRoot)
+        const newValue = getNewValue(relativePathToProjectRoot, importPath)
+        //let newValue = getRelativeImportPath(state.file.opts.sourceRoot, sourcePath, importPath)
+        //newValue += importPath === prefix ? '/' : ''
         if (typeof firstArg.value === 'object') {
           firstArg.value.raw = newValue
           firstArg.value.cooked = newValue
