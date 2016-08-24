@@ -28,9 +28,9 @@ const hasPrefix = (prefix, path) => path.slice(0, prefix.length) === prefix
 
 const getProjectRoot = (sourceRoot = '') => resolvePath(process.cwd(), sourceRoot)
 
-const getAbsoluteSourceDirname = (sourcePath, projectRoot) => {
+const getAbsoluteSourceDirname = (sourcePath) => {
   const sourceDirname = getDirname(sourcePath)
-  return isAbsolutePath(sourcePath) ? sourceDirname : joinPath(projectRoot, sourceDirname)
+  return isAbsolutePath(sourcePath) ? sourceDirname : joinPath(process.cwd(), sourceDirname)
 }
 
 const getRelativePathToProjectRoot = (absoluteSourcePath, projectRoot) => {

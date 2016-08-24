@@ -73,7 +73,7 @@ test('transforms prefix nested with sourceRoot', t => {
   t.plan(1)
   const result = transform('require("~/app/utils/get-things");', {
     sourceRoot: 'src',
-    filename: 'app/views/the-light.js',
+    filename: 'src/app/views/the-light.js',
     plugins
   })
   t.equal(result.code, 'require("../../app/utils/get-things");')
@@ -84,7 +84,7 @@ test('transforms prefix with absolute source root', t => {
   const code = 'require("~/foo");'
   const result = transform(code, {
     sourceRoot: process.cwd() + '/a',
-    filename: 'b/file.js',
+    filename: 'a/b/file.js',
     plugins
   })
   t.equal(result.code, 'require("../foo");')
