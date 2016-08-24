@@ -1,17 +1,17 @@
-# babel-plugin-relative-require
+# root require
 
 Replaces a prefix in `require` calls with the relative path from the file to the project root.
 
 ## install
 
 ```sh
-npm install babel-plugin-relative-require
+npm install babel-plugin-root-require
 ```
 
 ## example
 
 ```sh
-babel src --source-root src --plugins relative-require --out-dir build
+babel src --source-root src --plugins root-require --out-dir build
 ```
 
 - src (project root)

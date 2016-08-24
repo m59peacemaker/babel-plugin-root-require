@@ -1,5 +1,5 @@
 {
-  "name": "babel-plugin-relative-require",
+  "name": "babel-plugin-root-require",
   "version": "1.0.0",
   "description": "Replaces a prefix in `require` calls with the relative path from the file to the project root.",
   "main": "index.js",
@@ -19,7 +19,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/m59peacemaker/babel-plugin-relative-require"
+    "url": "https://github.com/m59peacemaker/babel-plugin-root-require"
   },
   "author": {
     "name": "Johnny Hauser",
