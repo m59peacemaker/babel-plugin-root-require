@@ -38,7 +38,7 @@ require('~/d') // -> require('../d')
 
 ```json
 {
-  plugins: [
+  "plugins": [
     ["root-require": {
       "projectRoot": "src"
     }]
