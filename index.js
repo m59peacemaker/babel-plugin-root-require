@@ -33,19 +33,6 @@ const getProjectRoot = (projectRootOpt = './') => {
   return isAbsolutePath(projectRootOpt) ? projectRootOpt : joinPath(process.cwd(), projectRootOpt)
 }
 
-const getNewValue = ({
-  longPath = false,
-  projectRoot,
-  sourcePathFromRoot,
-  modulePathFromRoot
-}) => {
-  if (longPath) {
-    return getLongRelativePathToModule(projectRoot, sourcePathFromRoot, modulePathFromRoot)
-  } else {
-    return getRelativePathToModule(sourcePathFromRoot, modulePathFromRoot)
-  }
-}
-
 const updateNode = (node, value) => {
   if (typeof node.value === 'object') {
     node.value.raw = value
@@ -76,22 +63,17 @@ const plugin = ({types: t}) => {
         }
         const prefix = customPrefix || defaultPrefix
 
-        const requirePath = firstNode.value.raw || firstNode.value
-        if (!hasPrefix(prefix, requirePath)) { return }
+        const modulePath = firstNode.value.raw || firstNode.value
+        if (!hasPrefix(prefix, modulePath)) { return }
 
         const projectRootOpt = state.opts.projectRoot || ''
+
         const projectRoot = getProjectRoot(state.opts.projectRoot)
-
-        const modulePathFromRoot = stripPrefix(prefix, requirePath)
-
         const sourcePathFromRoot = getRelativePath(projectRoot, sourcePath)
+        const modulePathFromRoot = stripPrefix(prefix, modulePath)
 
-        const newValue = getNewValue({
-          longPath: state.opts.long,
-          projectRoot,
-          sourcePathFromRoot,
-          modulePathFromRoot
-        })
+        const getNewValue = state.opts.long ? getLongRelativePathToModule : getRelativePathToModule
+        const newValue = getNewValue(sourcePathFromRoot, modulePathFromRoot)
         updateNode(firstNode, newValue)
       }
     }

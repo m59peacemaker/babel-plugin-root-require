@@ -1,7 +1,7 @@
 {
   "name": "babel-plugin-root-require",
   "version": "1.0.0",
-  "description": "Replaces a prefix in `require` calls with the relative path from the file to the project root.",
+  "description": "Transforms import/require module paths that have a prefix referring to the project root.",
   "main": "index.js",
   "scripts": {
     "test": "node test"
@@ -33,6 +33,6 @@
     "tape": "^4.6.0"
   },
   "dependencies": {
-    "root-import-utils": "^1.0.1"
+    "root-import-utils": "^1.0.3"
   }
 }
