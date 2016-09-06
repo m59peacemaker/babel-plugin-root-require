@@ -2,6 +2,21 @@ const test = require('tape')
 const {transform} = require('babel-core')
 const plugin = require('../')
 const plugins = [plugin]
+const rimraf = require('rimraf')
+const exec = require('child_process').exec
+const reloadRequire = require('require-reload')(require)
+
+const fixtures = __dirname + '/fixtures'
+const fixture = name => fixtures + '/' + name
+const tmpDir = '/tmp/test-root-require'
+
+const resetState = () => rimraf.sync(tmpDir)
+const compile = (src, cwd, cb) => {
+  return exec(`babel ${src} -d ${tmpDir} --plugins ${__dirname}/../index`, {cwd}, (err, body) => {
+    console.log(body)
+    cb(err, body)
+  })
+}
 
 test('does not transform other functions', t => {
   t.plan(1)
@@ -50,100 +65,120 @@ test('does not transform require when path is not prefixed', t => {
   t.equal(result.code, code)
 })
 
-test('transforms prefix from file in root directory', t => {
+test('transforms prefixed module path to relative path to module', t => {
   t.plan(1)
-  const code = 'require("~/foo");'
-  const result = transform(code, {
-    filename: 'file.js',
+  const result = transform('require("~/a/b/c");', {
+    filename: 'a/b/d',
     plugins
   })
-  t.equal(result.code, 'require("./foo");')
+  t.equal(result.code, 'require("./c");')
+})
+
+test('opts.longPath replaces prefix with relative path to project root', t => {
+  t.plan(1)
+  const result = transform('require("~/a/b/c");', {
+    filename: 'a/b/d',
+    plugins: [[plugin, {long: true}]]
+  })
+  t.equal(result.code, 'require("../../a/b/c");')
+})
+
+test('transforms prefix from file in root directory', t => {
+  t.plan(1)
+  compile('./', fixture('a'), err => {
+    if (err) { return t.fail(err) }
+    const result = reloadRequire(tmpDir + '/req-a')
+    resetState()
+    t.equal(result, 'a')
+  })
 })
 
 test('transforms prefix nested', t => {
   t.plan(1)
-  const result = transform('require("~/app/utils/get-things");', {
-    filename: 'app/views/the-light.js',
-    plugins
+  compile('./', fixture('b'), err => {
+    if (err) { return t.fail(err) }
+    const result = reloadRequire(tmpDir + '/nest/nest/b')
+    resetState()
+    t.equal(result, 'b')
   })
-  t.equal(result.code, 'require("../../app/utils/get-things");')
-})
-
-test('transforms prefix nested with sourceRoot', t => {
-  t.plan(1)
-  const result = transform('require("~/app/utils/get-things");', {
-    sourceRoot: 'src',
-    filename: 'src/app/views/the-light.js',
-    plugins
-  })
-  t.equal(result.code, 'require("../../app/utils/get-things");')
-})
-
-test('transforms prefix with absolute source root', t => {
-  t.plan(1)
-  const code = 'require("~/foo");'
-  const result = transform(code, {
-    sourceRoot: process.cwd() + '/a',
-    filename: 'a/b/file.js',
-    plugins
-  })
-  t.equal(result.code, 'require("../foo");')
-})
-
-test('transforms prefix with absolute filename set', t => {
-  t.plan(1)
-  const code = 'require("~/foo");'
-  const result = transform(code, {
-    filename: process.cwd() + '/file.js',
-    plugins
-  })
-  t.equal(result.code, 'require("./foo");')
 })
 
 test('transforms prefix for expression starting with prefix', t => {
   t.plan(1)
-  const result = transform('require("~/" + "/foo");', {
-    filename: 'foo/bar/file.js',
-    plugins
+  compile('./', fixture('c'), err => {
+    if (err) { return t.fail(err) }
+    const result = reloadRequire(tmpDir)
+    resetState()
+    t.equal(result, 'c')
   })
-  t.equal(result.code, 'require("../../" + "/foo");')
 })
 
 test('transforms prefix for argument with string and variable', t => {
   t.plan(1)
-  const result = transform('require("~/" + myVar + "/test");', {
-    filename: 'foo/bar/file.js',
-    plugins
+  compile('./', fixture('d'), err => {
+    if (err) { return t.fail(err) }
+    const result = reloadRequire(tmpDir)
+    resetState()
+    t.equal(result, 'd')
   })
-  t.equal(result.code, 'require("../../" + myVar + "/test");')
-})
-
-test('transforms prefix when require path is in the same tree as source filename', t => {
-  t.plan(1)
-  const result = transform('require("~/foo/x");', {
-    filename: 'foo/bar/file.js',
-    plugins
-  })
-  t.equal(result.code, 'require("../../foo/x");')
 })
 
 test('transforms prefix when followed by a string not ending in a slash, followed by stuff', t => {
   t.plan(1)
-  const result = transform('require("~/foo" + myVar + "/test");', {
-    filename: 'foo/bar/file.js',
-    plugins
+  compile('./', fixture('e'), err => {
+    if (err) { return t.fail(err) }
+    const result = reloadRequire(tmpDir)
+    resetState()
+    t.equal(result, 'e')
   })
-  t.equal(result.code, 'require("../../foo" + myVar + "/test");')
 })
 
 test('transforms prefix with template string interpolation', t => {
   t.plan(1)
-  const result = transform('require(`~/${ myVar }`);', {
-    filename: 'a/file.js',
-    plugins
+  compile('./', fixture('f'), err => {
+    if (err) { return t.fail(err) }
+    const result = reloadRequire(tmpDir)
+    resetState()
+    t.equal(result, 'f')
   })
-  t.equal(result.code, 'require(`../${ myVar }`);')
 })
+
+test('works with relative projectRoot opt and relative filename', t => {
+  t.plan(1)
+  const result = transform('require("~/foo");', {
+    filename: 'src/file.js',
+    plugins: [[plugin, {projectRoot: './src'}]]
+  })
+  t.equal(result.code, 'require("./foo");')
+})
+
+test('works with relative projectRoot opt and absolute filename', t => {
+  t.plan(1)
+  const result = transform('require("~/foo");', {
+    filename: process.cwd() + '/src/file.js',
+    plugins: [[plugin, {projectRoot: './src'}]]
+  })
+  t.equal(result.code, 'require("./foo");')
+})
+
+test('works with absolute projectRoot opt and relative filename', t => {
+  t.plan(1)
+  const result = transform('require("~/foo");', {
+    filename: 'src/file.js',
+    plugins: [[plugin, {projectRoot: process.cwd() + '/src'}]]
+  })
+  t.equal(result.code, 'require("./foo");')
+})
+
+test('works with absolute projectRoot opt and absolute filename', t => {
+  t.plan(1)
+  const result = transform('require("~/foo");', {
+    filename: process.cwd() + '/src/file.js',
+    plugins: [[plugin, {projectRoot: process.cwd() + '/src'}]]
+  })
+  t.equal(result.code, 'require("./foo");')
+})
+
 
 test('uses `prefix` option', t => {
   t.plan(1)

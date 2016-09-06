@@ -1,73 +1,70 @@
 const {
-  join: joinPath,
   relative: getRelativePath,
-  resolve: resolvePath,
-  dirname: getDirname,
-  isAbsolute: isAbsolutePath
+  isAbsolute: isAbsolutePath,
+  join: joinPath
 } = require('path')
+const {
+  hasPrefix,
+  stripPrefix,
+  getRelativePathToModule,
+  getLongRelativePathToModule
+} = require('root-import-utils')
 
 const defaultPrefix = '~'
 
-const traverseForFirstPartOfRequirePath = (t, node) => {
-  if (t.isStringLiteral(node)) {
-    return node
+const traverseForFirstPartOfRequirePath = (t, arg) => {
+  if (t.isStringLiteral(arg)) {
+    return arg
   }
-  if (t.isBinaryExpression(node)) {
-    return traverseForFirstPartOfRequirePath(t, node.left)
+  if (t.isBinaryExpression(arg)) {
+    return traverseForFirstPartOfRequirePath(t, arg.left)
   }
-  if (t.isTemplateLiteral(node)) {
-    return traverseForFirstPartOfRequirePath(t, node.quasis[0])
+  if (t.isTemplateLiteral(arg)) {
+    return traverseForFirstPartOfRequirePath(t, arg.quasis[0])
   }
-  if (t.isTemplateElement(node)) {
-    return node
+  if (t.isTemplateElement(arg)) {
+    return arg
   }
   return null // there isn't a string or template string here
 }
 
-const hasPrefix = (prefix, path) => path.slice(0, prefix.length) === prefix
-
-const getProjectRoot = (sourceRoot = '') => resolvePath(process.cwd(), sourceRoot)
-
-const getAbsoluteSourceDirname = (sourcePath) => {
-  const sourceDirname = getDirname(sourcePath)
-  return isAbsolutePath(sourcePath) ? sourceDirname : joinPath(process.cwd(), sourceDirname)
+const getProjectRoot = (projectRootOpt = './') => {
+  // if opt is absolute, use that, otherwise use cwd with relative opt joined if given
+  return isAbsolutePath(projectRootOpt) ? projectRootOpt : joinPath(process.cwd(), projectRootOpt)
 }
 
-const getRelativePathToProjectRoot = (absoluteSourcePath, projectRoot) => {
-  const relativePath = getRelativePath(absoluteSourcePath, projectRoot)
-  return relativePath + (relativePath.substr(-1) === '.' ? '/' : '')
-}
-
-const getNewValue = (sourceRoot, sourcePath, importPath, pathFromRoot) => {
-  const projectRoot = getProjectRoot(sourceRoot)
-  const absoluteSourcePath = getAbsoluteSourceDirname(sourcePath, projectRoot)
-  const relativePathToProjectRoot = getRelativePathToProjectRoot(absoluteSourcePath, projectRoot)
-  if (relativePathToProjectRoot.length) {
-    return joinPath(relativePathToProjectRoot, pathFromRoot)
-  } else { // source file is in project root
-    return './' + pathFromRoot
+const getNewValue = ({
+  longPath = false,
+  projectRoot,
+  sourcePathFromRoot,
+  modulePathFromRoot
+}) => {
+  if (longPath) {
+    return getLongRelativePathToModule(projectRoot, sourcePathFromRoot, modulePathFromRoot)
+  } else {
+    return getRelativePathToModule(sourcePathFromRoot, modulePathFromRoot)
   }
 }
 
-const updateNode = (newValue, node) => {
+const updateNode = (node, value) => {
   if (typeof node.value === 'object') {
-    node.value.raw = newValue
-    node.value.cooked = newValue
+    node.value.raw = value
+    node.value.cooked = value
   } else {
-    node.value = newValue
+    node.value = value
   }
 }
 
 const plugin = ({types: t}) => {
   return {
     visitor: {
-      CallExpression (path, state) {
+      CallExpression: (path, state) => {
         if (path.node.callee.name !== 'require') { return } // function call is not `require`
 
         const args = path.node.arguments
         if (!args.length) { return } // function call doesn't have any arguments
 
-        const sourcePath = state.file.opts.filename
+        let sourcePath = state.file.opts.filename
         if (sourcePath === 'unknown') { return } // code isn't from a file
 
         const firstNode = traverseForFirstPartOfRequirePath(t, args[0])
@@ -77,14 +74,25 @@ const plugin = ({types: t}) => {
         if (customPrefix !== undefined && typeof customPrefix !== 'string') {
           throw new Error(`"prefix" option must be a string. "${typeof customPrefix}" given.`)
         }
-        const prefix = (customPrefix || defaultPrefix) + '/'
+        const prefix = customPrefix || defaultPrefix
 
-        const importPath = firstNode.value.raw || firstNode.value
-        if (!hasPrefix(prefix, importPath)) { return }
+        const requirePath = firstNode.value.raw || firstNode.value
+        if (!hasPrefix(prefix, requirePath)) { return }
 
-        const pathFromRoot = importPath.slice(prefix.length)
-        const newValue = getNewValue(state.file.opts.sourceRoot, sourcePath, importPath, pathFromRoot)
-        updateNode(newValue, firstNode)
+        const projectRootOpt = state.opts.projectRoot || ''
+        const projectRoot = getProjectRoot(state.opts.projectRoot)
+
+        const modulePathFromRoot = stripPrefix(prefix, requirePath)
+
+        const sourcePathFromRoot = getRelativePath(projectRoot, sourcePath)
+
+        const newValue = getNewValue({
+          longPath: state.opts.long,
+          projectRoot,
+          sourcePathFromRoot,
+          modulePathFromRoot
+        })
+        updateNode(firstNode, newValue)
       }
     }
   }
