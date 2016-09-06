@@ -49,7 +49,7 @@ require('~/d') // -> require('../d')
 ### terminal
 
 ```sh
-babel src --source-root src --plugins root-require --out-dir build
+babel src --out-dir build
 ```
 
 ## options
