@@ -1,11 +1,7 @@
 {
   "name": "babel-plugin-root-require",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Transforms import/require module paths that have a prefix referring to the project root.",
-  "main": "index.js",
-  "scripts": {
-    "test": "node test"
-  },
   "keywords": [
     "babel",
     "plugin",
@@ -17,6 +13,10 @@
     "simple",
     "convenient"
   ],
+  "main": "index.js",
+  "scripts": {
+    "test": "node test"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/m59peacemaker/babel-plugin-root-require"
@@ -26,13 +26,13 @@
     "email": "johnnyhauser@gmail.com"
   },
   "license": "VOL",
+  "dependencies": {
+    "root-import-utils": "^1.0.4"
+  },
   "devDependencies": {
     "babel-core": "^6.13.2",
     "require-reload": "^0.2.2",
     "rimraf": "^2.5.4",
     "tape": "^4.6.0"
-  },
-  "dependencies": {
-    "root-import-utils": "^1.0.3"
   }
 }

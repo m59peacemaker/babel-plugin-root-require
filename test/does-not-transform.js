@@ -50,4 +50,12 @@ test('does not transform require when path is not prefixed', t => {
   t.equal(result.code, code)
 })
 
-
+test('does not transform prefix followed by character that is not a slash', t => {
+  t.plan(1)
+  const code = 'require("~foo");'
+  const result = transform(code, {
+    filename: 'foo/bar.js',
+    plugins
+  })
+  t.equal(result.code, code)
+})
