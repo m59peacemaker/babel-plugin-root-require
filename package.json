@@ -1,6 +1,6 @@
 {
   "name": "babel-plugin-root-require",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Transforms import/require module paths that have a prefix referring to the project root.",
   "keywords": [
     "babel",
@@ -25,7 +25,7 @@
     "name": "Johnny Hauser",
     "email": "johnnyhauser@gmail.com"
   },
-  "license": "VOL",
+  "license": "CC0-1.0",
   "dependencies": {
     "root-import-utils": "^1.0.4"
   },
