@@ -59,3 +59,41 @@ test('does not transform prefix followed by character that is not a slash', t =>
   })
   t.equal(result.code, code)
 })
+
+test('does not transform resolve function that is not an object property', t => {
+  t.plan(1)
+  const result = transform('resolve("~/foo");', {
+    filename: 'file.js',
+    plugins
+  })
+  t.equal(result.code, 'resolve("~/foo");')
+})
+
+test('does not transform resolve function when it is a property of a different object', t => {
+  t.plan(1)
+  const result = transform('notRequire.resolve("~/foo");', {
+    filename: 'file.js',
+    plugins
+  })
+  t.equal(result.code, 'notRequire.resolve("~/foo");')
+})
+
+test('does not transform require that is not the global require', t => {
+  t.plan(1)
+  const code = 'const require = () => {};\nrequire("~/foo");'
+  const result = transform(code, {
+    filename: 'file.js',
+    plugins
+  })
+  t.equal(result.code, code)
+})
+
+test('does not transform require.resolve that is not the global require', t => {
+  t.plan(1)
+  const code = 'const require = () => {};\nrequire.resolve = () => {};\nrequire.resolve("~/foo");'
+  const result = transform(code, {
+    filename: 'file.js',
+    plugins
+  })
+  t.equal(result.code, code)
+})

@@ -3,6 +3,7 @@ const {
   isAbsolute: isAbsolutePath,
   join: joinPath
 } = require('path')
+
 const {
   hasPrefix,
   stripPrefix,
@@ -42,11 +43,21 @@ const updateNode = (node, value) => {
   }
 }
 
+const isRequireOrResolve = path => {
+  return path.scope.globals.require && (
+    path.node.callee.name === 'require' || (
+      path.node.callee.object &&
+      path.node.callee.object.name === 'require' &&
+      path.node.callee.property.name === 'resolve'
+    )
+  )
+}
+
 const plugin = ({types: t}) => {
   return {
     visitor: {
       CallExpression: (path, state) => {
-        if (path.node.callee.name !== 'require') { return } // function call is not `require`
+        if (!isRequireOrResolve(path)) { return }
 
         const args = path.node.arguments
         if (!args.length) { return } // function call doesn't have any arguments

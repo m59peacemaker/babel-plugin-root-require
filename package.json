@@ -30,6 +30,7 @@
     "root-import-utils": "^1.0.4"
   },
   "devDependencies": {
+    "babel-cli": "^6.23.0",
     "babel-core": "^6.13.2",
     "require-reload": "^0.2.2",
     "rimraf": "^2.5.4",

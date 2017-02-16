@@ -12,7 +12,7 @@ const tmpDir = '/tmp/test-root-require'
 
 const resetState = () => rimraf.sync(tmpDir)
 const compile = (src, cwd, cb) => {
-  return exec(`babel ${src} -d ${tmpDir} --plugins ${__dirname}/../index`, {cwd}, (err, body) => {
+  return exec(`${require.resolve('babel-cli/bin/babel')} ${src} -d ${tmpDir} --plugins ${__dirname}/../index`, {cwd}, (err, body) => {
     console.log(body)
     cb(err, body)
   })
@@ -173,4 +173,13 @@ test('very nested', t => {
     plugins
   })
   t.equal(result.code, 'require("../../../../../q/w/e/r/t/y");')
+})
+
+test('transforms require.resolve', t => {
+  t.plan(1)
+  const result = transform('require.resolve("~/foo");', {
+    filename: 'file.js',
+    plugins
+  })
+  t.equal(result.code, 'require.resolve("./foo");')
 })
