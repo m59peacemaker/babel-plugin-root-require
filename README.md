@@ -1,6 +1,6 @@
 # babel-plugin-root-require
 
-Transforms import/require module paths that have a prefix referring to the project root.
+Transforms require module paths that have a prefix referring to the project root. Also works on `require.resolve`.
 
 ## install
 
