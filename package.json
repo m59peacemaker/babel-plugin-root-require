@@ -1,7 +1,7 @@
 {
   "name": "babel-plugin-root-require",
   "version": "1.1.2",
-  "description": "Transforms import/require module paths that have a prefix referring to the project root.",
+  "description": "Transforms require module paths that have a prefix referring to the project root. Also works on `require.resolve`.",
   "keywords": [
     "babel",
     "plugin",
