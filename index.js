@@ -43,21 +43,19 @@ const updateNode = (node, value) => {
   }
 }
 
-const isRequireOrResolve = path => {
-  return path.scope.globals.require && (
-    path.node.callee.name === 'require' || (
-      path.node.callee.object &&
-      path.node.callee.object.name === 'require' &&
-      path.node.callee.property.name === 'resolve'
-    )
-  )
+const isResolve = (t, callee) => t.isIdentifier(callee.object, {name: 'require'}) &&
+  callee.property.name === 'resolve'
+
+const isRequireOrResolve = (t, path) => {
+  return (path.node.callee.name === 'require' || isResolve(t, path.node.callee))
+    && path.scope.hasGlobal('require')
 }
 
 const plugin = ({types: t}) => {
   return {
     visitor: {
       CallExpression: (path, state) => {
-        if (!isRequireOrResolve(path)) { return }
+        if (!isRequireOrResolve(t, path)) { return }
 
         const args = path.node.arguments
         if (!args.length) { return } // function call doesn't have any arguments

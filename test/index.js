@@ -183,3 +183,18 @@ test('transforms require.resolve', t => {
   })
   t.equal(result.code, 'require.resolve("./foo");')
 })
+
+test('transform require that is in a function scope', t => {
+  t.plan(1)
+  const code = `const foo = () => {
+  function bar() {
+    return require("~/a");
+  }
+  return bar;
+};`
+  const result = transform(code, {
+    filename: 'b',
+    plugins
+  })
+  t.equal(result.code, code.replace('~', '.'))
+})
