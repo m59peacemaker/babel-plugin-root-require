@@ -198,3 +198,12 @@ test('transform require that is in a function scope', t => {
   })
   t.equal(result.code, code.replace('~', '.'))
 })
+
+test('preserves trailing slash', t => {
+  t.plan(1)
+  const result = transform('require("~/foo/" + bar);', {
+    filename: 'a',
+    plugins
+  })
+  t.equal(result.code, 'require("./foo/" + bar);')
+})
